@@ -132,11 +132,14 @@ DATABASES = {
         'ENGINE': 'mssql',
         'NAME': 'jobradar_db',
         'HOST': 'PREDATOR',
+        'USER': '',  # Dejar vacío para Windows Authentication
+        'PASSWORD': '',  # Dejar vacío para Windows Authentication
         'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
+            'driver': 'ODBC Driver 16 for SQL Server',
             'Trusted_Connection': 'yes',
             'TrustServerCertificate': 'yes',
             'MultipleActiveResultSets': 'True',
+            'extra_params': 'Integrated Security=SSPI;',
         },
     }
 }
