@@ -1,0 +1,240 @@
+<!--
+index.html - Página principal de JobRadar
+
+Este archivo contiene la interfaz principal de la aplicación donde los usuarios pueden:
+- Ver las ofertas de trabajo disponibles
+- Guardar ofertas en favoritos
+- Navegar entre diferentes páginas
+- Iniciar/cerrar sesión
+
+Funcionalidades principales:
+- Listado de ofertas de trabajo
+- Filtrado de ofertas
+- Sistema de guardado de ofertas
+- Gestión de autenticación mediante JWT
+
+Dependencias:
+- TailwindCSS para estilos
+- API REST de JobRadar para datos
+-->
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JobRadar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="favicon/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="favicon/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="favicon/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="favicon/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="favicon/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="favicon/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="favicon/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+    <link rel="manifest" href="favicon/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="favicon/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+</head>
+
+<body class="bg-gray-100 text-gray-900 font-sans p-4">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-6">Ofertas Laborales</h1>
+        <div id="ofertas" class="grid gap-4"></div>
+    </div>
+
+    <script>
+        async function fetchWithAuth(url, options = {}) {
+            const token = localStorage.getItem('access');
+            if (!token) {
+                localStorage.clear();
+                window.location.href = '/static/api/login.html';
+                return null;
+            }
+
+            options.headers = {
+                ...options.headers,
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+
+            try {
+                const response = await fetch(url, options);
+                if (response.status === 401) {
+                    try {
+                        await refreshToken();
+                        return fetchWithAuth(url, options);
+                    } catch (e) {
+                        localStorage.clear();
+                        window.location.href = '/static/api/login.html';
+                        return null;
+                    }
+                }
+                return response;
+            } catch (error) {
+                console.error('Error en fetchWithAuth:', error);
+                throw new Error('Error de conexión');
+            }
+        }
+
+        async function handleApiCall(url, options = {}) {
+            try {
+                let response = await fetchWithAuth(url, options);
+                if (!response) return null;
+
+                // Primero verificamos si la respuesta está bien antes de intentar parsear
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorMessage = 'Error en la petición';
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        errorMessage = errorData.detail || errorMessage;
+                    } catch (e) {
+                        console.error('Error parseando respuesta de error:', e);
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                // Si la respuesta es ok, intentamos parsear como JSON
+                try {
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        return response;
+                    } else {
+                        console.warn('Respuesta no es JSON:', contentType);
+                        return response;
+                    }
+                } catch (parseError) {
+                    console.error('Error al procesar respuesta:', parseError);
+                    throw new Error('Error al procesar la respuesta del servidor');
+                }
+            } catch (error) {
+                console.error('Error en API call:', error);
+                throw error;
+            }
+        }
+
+        async function refreshToken() {
+            const refresh = localStorage.getItem('refresh');
+            if (!refresh) {
+                throw new Error('No hay token de refresco disponible');
+            }
+
+            const response = await fetch('/api/token/refresh/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ refresh })
+            });
+
+            if (!response.ok) {
+                throw new Error('No se pudo refrescar el token');
+            }
+
+            const data = await response.json();
+            localStorage.setItem('access', data.access);
+            return data.access;
+        }
+
+        async function cargarOfertas() {
+            try {
+                const response = await handleApiCall('/api/jobs/');
+                if (!response) return;
+
+                const data = await response.json();
+                const ofertasDiv = document.getElementById('ofertas');
+                ofertasDiv.innerHTML = '';
+
+                if (data.length === 0) {
+                    ofertasDiv.innerHTML = '<p class="text-center text-gray-600">No hay ofertas disponibles</p>';
+                    return;
+                }
+
+                data.forEach(oferta => {
+                    const ofertaElement = document.createElement('div');
+                    ofertaElement.className = 'bg-white p-4 rounded shadow mb-4';
+                    ofertaElement.innerHTML = `
+                        <h2 class="text-xl font-bold mb-2">${oferta.title || 'Sin título'}</h2>
+                        <p class="text-gray-600 mb-2">${oferta.company || 'Empresa no especificada'}</p>
+                        <p class="mb-4">${oferta.description || 'Sin descripción'}</p>
+                        <button onclick="guardarOferta(${oferta.id})" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Guardar oferta
+                        </button>
+                    `;
+                    ofertasDiv.appendChild(ofertaElement);
+                });
+            } catch (error) {
+                console.error('Error al cargar ofertas:', error);
+                const ofertasDiv = document.getElementById('ofertas');
+                ofertasDiv.innerHTML = `<p class="text-center text-red-600">Error al cargar las ofertas: ${error.message}</p>`;
+            }
+        }
+
+        async function guardarOferta(idOferta) {
+            if (!localStorage.getItem('access')) {
+                alert('Debes iniciar sesión primero');
+                window.location.href = '/static/api/login.html';
+                return;
+            }
+
+            try {
+                const response = await handleApiCall('/api/saved-offers/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ offer: idOferta })
+                });
+
+                if (!response) return;
+
+                // Intentamos obtener el texto de la respuesta primero
+                const responseText = await response.text();
+                let responseData;
+
+                try {
+                    responseData = JSON.parse(responseText);
+                } catch (e) {
+                    console.log('Respuesta no es JSON:', responseText);
+                    if (response.ok) {
+                        alert('¡Oferta guardada con éxito!');
+                        return;
+                    } else {
+                        throw new Error('Error al guardar la oferta');
+                    }
+                }
+
+                if (responseData.error) {
+                    throw new Error(responseData.error);
+                }
+
+                alert('¡Oferta guardada con éxito!');
+            } catch (error) {
+                console.error('Error al guardar la oferta:', error);
+                if (error.message.includes('No hay token') || error.message.includes('Sesión expirada')) {
+                    alert('Por favor, inicia sesión para guardar ofertas');
+                    window.location.href = '/static/api/login.html';
+                } else {
+                    alert(error.message);
+                }
+            }
+        }
+
+        cargarOfertas();
+    </script>
+</body>
+
+</html>

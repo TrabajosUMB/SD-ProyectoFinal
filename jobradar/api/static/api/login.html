@@ -1,0 +1,135 @@
+<!--
+login.html - Página de inicio de sesión de JobRadar
+
+Este archivo maneja la autenticación de usuarios mediante:
+- Formulario de inicio de sesión
+- Gestión de tokens JWT
+- Redirección a página principal
+
+Funcionalidades principales:
+- Validación de credenciales
+- Almacenamiento seguro de tokens
+- Manejo de errores de autenticación
+- Refresh automático de tokens
+
+Dependencias:
+- TailwindCSS para estilos
+- API REST de JobRadar para autenticación
+-->
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - JobRadar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="favicon/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="favicon/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="favicon/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="favicon/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="favicon/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="favicon/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="favicon/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+    <link rel="manifest" href="favicon/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="favicon/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+</head>
+
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-full max-w-sm">
+        <h2 class="text-2xl font-bold text-center mb-6">Iniciar Sesión</h2>
+        <div id="error" class="text-red-600 text-sm mb-3 hidden">Credenciales inválidas</div>
+        <form id="loginForm">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm mb-2" for="username">Usuario</label>
+                <input name="username" id="username" type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight" required />
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm mb-2" for="password">Contraseña</label>
+                <input name="password" id="password" type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required autocomplete="current-password" />
+            </div>
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">
+                Iniciar Sesión
+            </button>
+        </form>
+    </div>
+
+    <script>
+        async function handleLogin(username, password) {
+            try {
+                // Asegurarnos de usar la URL correcta para el token
+                const tokenUrl = '/api/token/';
+                console.log('Intentando login en:', tokenUrl);
+                
+                const response = await fetch(tokenUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    console.error('Error parsing response:', await response.text());
+                    throw new Error('Error del servidor: respuesta inválida');
+                }
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Error de autenticación');
+                }
+
+                console.log('Login exitoso');
+                return data;
+            } catch (error) {
+                if (error.name === 'SyntaxError') {
+                    throw new Error('Error del servidor: respuesta no válida');
+                }
+                throw error;
+            }
+        }
+
+        const form = document.getElementById('loginForm');
+        const errorDiv = document.getElementById('error');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorDiv.classList.add('hidden');
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                console.log('Enviando formulario con:', username);
+                const data = await handleLogin(username, password);
+                console.log('Login exitoso, guardando tokens...');
+                localStorage.setItem('access', data.access);
+                localStorage.setItem('refresh', data.refresh);
+                console.log('Tokens guardados, redirigiendo...');
+                window.location.href = window.location.origin + '/static/api/index.html';
+                return false;
+            } catch (error) {
+                console.error('Error de login:', error);
+                errorDiv.textContent = error.message || 'Error al iniciar sesión';
+                errorDiv.classList.remove('hidden');
+                document.getElementById('password').value = '';
+            }
+        });
+    </script>
+</body>
+
+</html>
