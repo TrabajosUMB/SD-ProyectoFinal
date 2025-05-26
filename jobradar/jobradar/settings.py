@@ -40,9 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'jobradar.api',
     'django_filters',
     'drf_yasg',
-    'api',
     'rest_framework_simplejwt',
 ]
 
@@ -127,20 +127,29 @@ WSGI_APPLICATION = 'jobradar.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+}
+
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',
-        'NAME': 'jobradar_db',
-        'HOST': 'PREDATOR',
-        'USER': '',  # Dejar vacío para Windows Authentication
-        'PASSWORD': '',  # Dejar vacío para Windows Authentication
+        'NAME': 'JobRadarDB',
+        'HOST': 'localhost\\SQLEXPRESS',
         'OPTIONS': {
-            'driver': 'ODBC Driver 16 for SQL Server',
-            'Trusted_Connection': 'yes',
+            'driver': 'ODBC Driver 17 for SQL Server',
+            'trusted_connection': 'yes',
             'TrustServerCertificate': 'yes',
-            'MultipleActiveResultSets': 'True',
-            'extra_params': 'Integrated Security=SSPI;',
-        },
+        }
     }
 }
 

@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class JobOffer(models.Model):
     # Campos básicos
@@ -44,3 +46,31 @@ class SavedOffer(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.offer.title}"
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    professional_title = models.CharField(max_length=200, blank=True)
+    experience_years = models.IntegerField(default=0)
+    education_level = models.CharField(max_length=50, blank=True)
+    skills = models.JSONField(default=list, blank=True)
+    desired_salary_min = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    desired_salary_max = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    preferred_modality = models.CharField(max_length=50, blank=True)  # Remoto, Presencial, Híbrido
+    preferred_location = models.CharField(max_length=100, blank=True)
+    preferred_categories = models.JSONField(default=list, blank=True)
+    resume = models.FileField(upload_to='resumes/', null=True, blank=True)
+    linkedin_url = models.URLField(max_length=200, blank=True)
+    github_url = models.URLField(max_length=200, blank=True)
+    portfolio_url = models.URLField(max_length=200, blank=True)
+
+    def __str__(self):
+        return f"Profile of {self.user.username}"
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    instance.userprofile.save()
