@@ -1,103 +1,149 @@
-# JobRadar - Sistema de Búsqueda de Empleos
+# JobRadar - Sistema de Búsqueda y Scraping de Empleos
 
 ## Descripción General
-JobRadar es una aplicación web moderna para la búsqueda y gestión de ofertas de trabajo, desarrollada con Django y SQL Server.
-
-## Estructura del Proyecto
-
-### Backend (Django)
-
-#### Aplicación Principal (jobradar/)
-- `settings.py`: Configuración principal del proyecto
-  - Gestión de la base de datos SQL Server
-  - Configuración de seguridad y autenticación
-  - Configuración de REST Framework
-
-- `urls.py`: Enrutamiento principal
-  - Endpoints de la API REST
-  - Rutas administrativas
-  - Documentación de la API
-
-#### API (api/)
-- `models.py`: Modelos de datos
-  - JobOffer: Ofertas de trabajo
-  - SavedOffer: Ofertas guardadas por usuarios
-
-- `views.py`: Lógica de negocio
-  - JobOfferViewSet: Gestión de ofertas de trabajo
-  - SavedOfferViewSet: Gestión de ofertas guardadas
-
-- `serializers.py`: Serialización de datos
-  - Conversión de modelos a JSON y viceversa
-
-### Frontend (templates/)
-- `index.html`: Página principal
-- `login.html`: Página de inicio de sesión
-- `favoritos.html`: Gestión de ofertas guardadas
+JobRadar es una aplicación web moderna que combina búsqueda de empleos con web scraping automatizado. Desarrollada con Django, ofrece una API REST para recopilar y gestionar ofertas de trabajo de diferentes fuentes como CompuTrabajo y LinkedIn.
 
 ## Características Principales
 
-1. **Búsqueda de Empleos**
-   - Filtros avanzados por salario, experiencia, ubicación
-   - Búsqueda por palabras clave
-   - Ordenamiento personalizado
+1. **Web Scraping de Empleos**
+   - Scraping automatizado de CompuTrabajo
+   - Extracción inteligente de:
+     - Salarios
+     - Años de experiencia
+     - Habilidades requeridas
+   - Soporte para múltiples fuentes
 
-2. **Gestión de Usuarios**
-   - Registro e inicio de sesión
-   - Guardado de ofertas favoritas
-   - Perfil personalizado
-
-3. **API REST**
-   - Endpoints documentados con Swagger
+2. **API REST Completa**
+   - Endpoints para scraping bajo demanda
+   - Estadísticas de ofertas de trabajo
    - Autenticación JWT
-   - Filtrado y paginación
+   - Documentación con Swagger
 
-## Requisitos Técnicos
+3. **Frontend Moderno**
+   - Diseño responsive con Bootstrap
+   - Búsqueda y filtrado avanzado
+   - Perfiles de usuario personalizados
 
-### Base de Datos
-- SQL Server 2019 o superior
-- Configuración de autenticación Windows
+## Estructura del Proyecto
 
-### Python y Dependencias
+### Backend
+
+#### API (api/)
+- `models.py`: Modelos de datos
+  - UserProfile: Perfiles de usuario
+  - JobOffer: Ofertas de trabajo
+
+- `views.py`: Lógica de negocio
+  - Endpoints de scraping
+  - Gestión de ofertas
+  - Estadísticas
+
+- `scraper.py`: Motor de web scraping
+  - Scraping de CompuTrabajo
+  - Análisis de texto
+  - Extracción de datos
+
+### Frontend (frontend/)
+- `templates/`: Plantillas HTML
+  - `base.html`: Plantilla base
+  - `home.html`: Página principal
+  - `job_list.html`: Lista de empleos
+  - `job_detail.html`: Detalles de empleo
+  - `profile.html`: Perfil de usuario
+  - `login.html`: Inicio de sesión
+  - `register.html`: Registro
+
+## Endpoints de la API
+
+1. **Scraping de Empleos**
+```http
+POST /api/jobs/scrape_jobs/
+Body: {
+    "keyword": "python",
+    "location": "bogota",
+    "source": "computrabajo",
+    "num_pages": 1
+}
 ```
-python 3.11 o superior
-django==4.2.7
-djangorestframework==3.16.0
-mssql-django==1.4.1
-pyodbc==5.0.1
+
+2. **Estadísticas**
+```http
+GET /api/jobs/statistics/
 ```
 
-## Instalación y Configuración
+## Requisitos
 
-1. **Preparar el Entorno**
-   ```bash
-   python -m venv venv
-   .\venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
+```
+python>=3.8
+django
+djangorestframework
+beautifulsoup4
+selenium
+webdriver-manager
+pandas
+nltk
+```
 
-2. **Configurar Base de Datos**
-   - Asegurar que SQL Server esté en ejecución
-   - Crear base de datos 'JobRadarDB'
-   - Configurar settings.py con los datos de conexión
+## Instalación Rápida
 
-3. **Iniciar la Aplicación**
-   ```bash
-   python manage.py migrate
-   python manage.py createsuperuser
-   python manage.py runserver
-   ```
+1. **Clonar y Preparar**
+```bash
+git clone <repositorio>
+cd jobradar
+pip install -r requirements.txt
+```
 
-## Solución de Problemas
+2. **Configurar**
+```bash
+python manage.py migrate
+python manage.py createsuperuser
+```
 
-1. **Errores de Conexión a SQL Server**
-   - Verificar que el servicio esté en ejecución
-   - Comprobar el nombre de la instancia
-   - Asegurar que la autenticación Windows esté habilitada
+3. **Ejecutar**
+```bash
+python manage.py runserver
+```
 
-2. **Errores de CSRF**
-   - Verificar la configuración de MIDDLEWARE en settings.py
-   - Asegurar que las cookies estén habilitadas
+## Uso del Scraping
+
+1. Obtener token JWT:
+```http
+POST /api/token/
+Body: {
+    "username": "tu_usuario",
+    "password": "tu_contraseña"
+}
+```
+
+2. Hacer scraping:
+```http
+POST /api/jobs/scrape_jobs/
+Headers: {
+    "Authorization": "Bearer <tu_token>"
+}
+Body: {
+    "keyword": "python"
+}
+```
+
+## Contribuir
+1. Haz fork del repositorio
+2. Crea una rama para tu feature
+3. Haz commit de tus cambios
+4. Envía un pull request
+
+## Agradecimientos
+
+### Bibliotecas y Frameworks
+- Django y Django REST Framework para el backend
+- BeautifulSoup4 y Selenium para web scraping
+- NLTK para procesamiento de texto
+- Bootstrap para el frontend
+
+### Recursos
+- Documentación oficial de Django
+- Documentación de Selenium WebDriver
+- CompuTrabajo para datos de prueba
 
 ## Desarrollo y Contribución
 
@@ -356,18 +402,10 @@ GET /api/profile/favorites/
 - Documentar cambios en API
 - Mantener commits atómicos
 
-## Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
 
 ## Contacto
 
-- **Desarrollador**: [Tu Nombre]
-- **Email**: [Tu Email]
-- **GitHub**: [Tu perfil de GitHub]
+- **Desarrollador**: Santiago Rodriguez Angel
+- **Email**: ing.santiagorodriguezangel@gmail.com
+- **GitHub**: EngAngel
 
-## Agradecimientos
-
-- Mencionar colaboradores
-- Bibliotecas utilizadas
-- Recursos y tutoriales

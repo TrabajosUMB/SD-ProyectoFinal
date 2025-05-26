@@ -1,0 +1,95 @@
+{% extends 'frontend/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- Filtros -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Filtros</h5>
+                    <form method="get">
+                        <div class="mb-3">
+                            <label class="form-label">Modalidad</label>
+                            <select name="modality" class="form-select">
+                                <option value="">Todas</option>
+                                <option value="presencial">Presencial</option>
+                                <option value="remoto">Remoto</option>
+                                <option value="hibrido">Híbrido</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Contrato</label>
+                            <select name="contract_type" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="tiempo_completo">Tiempo Completo</option>
+                                <option value="medio_tiempo">Medio Tiempo</option>
+                                <option value="por_proyecto">Por Proyecto</option>
+                                <option value="practicas">Prácticas</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Experiencia Mínima</label>
+                            <select name="experience_years" class="form-select">
+                                <option value="">Cualquiera</option>
+                                <option value="0">Sin experiencia</option>
+                                <option value="1">1 año</option>
+                                <option value="2">2 años</option>
+                                <option value="3">3 años</option>
+                                <option value="5">5 años</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Aplicar Filtros</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de empleos -->
+        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Ofertas de Empleo</h2>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        Ordenar por
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="?ordering=-created_at">Más recientes</a></li>
+                        <li><a class="dropdown-item" href="?ordering=salary_max">Menor salario</a></li>
+                        <li><a class="dropdown-item" href="?ordering=-salary_max">Mayor salario</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            {% for job in jobs %}
+            <div class="card mb-3 job-card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5 class="card-title">{{ job.title }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">{{ job.company }}</h6>
+                            <p class="card-text">
+                                <i class="fas fa-map-marker-alt me-2"></i>{{ job.location }}<br>
+                                <i class="fas fa-money-bill-wave me-2"></i>${{ job.salary_min }} - ${{ job.salary_max }}<br>
+                                <i class="fas fa-briefcase me-2"></i>{{ job.get_contract_type_display }}
+                            </p>
+                            <div class="mb-2">
+                                <span class="badge bg-primary me-2">{{ job.get_modality_display }}</span>
+                                <span class="badge bg-secondary">{{ job.get_education_level_display }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{% url 'job_detail' job.pk %}" class="btn btn-primary">Ver Detalles</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="alert alert-info">
+                No se encontraron ofertas de empleo que coincidan con los criterios de búsqueda.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
